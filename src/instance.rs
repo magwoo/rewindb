@@ -1,34 +1,22 @@
 use anyhow::{Context, Result};
-use memory::RwPool;
 use std::fs::{DirBuilder, File};
 use std::path::PathBuf;
-use std::sync::Arc;
 
-use self::memory::Memory;
 use self::metadata::InstanceMetadata;
 use crate::database::Database;
+use crate::memory::prelude::*;
 
 pub mod memory;
 mod metadata;
 
 #[derive(Debug)]
-struct Instance<M: Memory> {
-    memory: Arc<RwPool<M>>,
+struct Instance {
     databases: Vec<Database>,
     metadata: InstanceMetadata,
 }
 
-impl<M: Memory> Instance<M> {
+impl Instance {
     pub fn new(path_base: &str) -> Result<Self> {
-        let dir_path = PathBuf::from(path);
-
-        DirBuilder::new()
-            .recursive(true)
-            .create(&dir_path)
-            .with_context(|| format!("failed to open/create dir {dir_path:?}"))?;
-
-        let metadata_path = dir_path.join("database.metadata");
-
         let metadata =
             InstanceMetadata::new(&metadata_path).context("Error while load instance metadata")?;
 

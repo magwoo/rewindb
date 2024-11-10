@@ -3,17 +3,13 @@ use std::fmt::Debug;
 use std::io::prelude::*;
 use std::sync::{Arc, LazyLock, Mutex};
 
-use self::file::FsPool;
+use self::heap::HeapMemory;
 
 pub mod file;
 pub mod heap;
+pub mod prelude;
 
-pub static MEMORY: LazyLock<Box<dyn Memory>> = LazyLock::new(|| {
-    Box::new(FsPool::new(
-        "./data".try_into().unwrap(),
-        8.try_into().unwrap(),
-    ))
-});
+pub static MEMORY: LazyLock<Box<dyn Memory>> = LazyLock::new(|| Box::new(HeapMemory::new()));
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub enum MemoryType {

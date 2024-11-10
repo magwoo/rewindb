@@ -9,14 +9,14 @@ use std::sync::{Arc, Mutex};
 use super::{Memory, MemoryType};
 
 #[derive(Debug)]
-pub struct FsPool {
+pub struct FsMemoryPool {
     path_base: PathBuf,
     max_readers: NonZeroUsize,
     readers: Mutex<HashMap<MemoryType, Vec<Arc<Mutex<File>>>>>,
     writers: Mutex<HashMap<MemoryType, Arc<Mutex<File>>>>,
 }
 
-impl Memory for FsPool {
+impl Memory for FsMemoryPool {
     fn get_for_read(&self, _what: MemoryType) -> Result<Arc<Mutex<dyn Read>>> {
         Ok(Arc::new(Mutex::new(Cursor::new(vec![]))))
     }
@@ -26,7 +26,7 @@ impl Memory for FsPool {
     }
 }
 
-impl FsPool {
+impl FsMemoryPool {
     pub fn new(path: PathBuf, max_readers: NonZeroUsize) -> Self {
         Self {
             path_base: path,
