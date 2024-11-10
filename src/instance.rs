@@ -1,22 +1,25 @@
 use anyhow::{Context, Result};
+use memory::RwPool;
 use std::fs::{DirBuilder, File};
 use std::path::PathBuf;
+use std::sync::Arc;
 
+use self::memory::Memory;
 use self::metadata::InstanceMetadata;
 use crate::database::Database;
 
-mod memory;
+pub mod memory;
 mod metadata;
 
 #[derive(Debug)]
-struct Instance {
-    path: PathBuf,
+struct Instance<M: Memory> {
+    memory: Arc<RwPool<M>>,
     databases: Vec<Database>,
     metadata: InstanceMetadata,
 }
 
-impl Instance {
-    pub fn new(path: &str) -> Result<Self> {
+impl<M: Memory> Instance<M> {
+    pub fn new(path_base: &str) -> Result<Self> {
         let dir_path = PathBuf::from(path);
 
         DirBuilder::new()

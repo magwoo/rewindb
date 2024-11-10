@@ -1,89 +1,78 @@
-use anyhow::{Context, Result};
-use std::collections::HashMap;
+use anyhow::Result;
+use std::fmt::Debug;
 use std::io::prelude::*;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
 
-mod file;
-mod heap;
+use self::file::FsPool;
 
-const MAX_READERS: usize = 8;
+pub mod file;
+pub mod heap;
 
-#[derive(Hash, PartialEq, Eq, Clone, Copy)]
+pub static MEMORY: LazyLock<Box<dyn Memory>> = LazyLock::new(|| {
+    Box::new(FsPool::new(
+        "./data".try_into().unwrap(),
+        8.try_into().unwrap(),
+    ))
+});
+
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub enum MemoryType {
     Metadata,
 }
 
-trait Memory: Read + Write + Sized {
-    type PathBase;
+pub trait Memory: Sync + Send {
+    fn get_for_read(&self, what: MemoryType) -> Result<Arc<Mutex<dyn Read>>>;
 
-    fn get_for_read(what: MemoryType) -> Result<Self>;
-
-    fn get_for_write(what: MemoryType) -> Result<Self>;
+    fn get_for_write(&self, what: MemoryType) -> Result<Arc<Mutex<dyn Write>>>;
 }
 
-pub struct RwPool<M: Memory> {
-    path_base: M::PathBase,
-    readers: Mutex<HashMap<MemoryType, Vec<Arc<Mutex<M>>>>>,
-    writers: Mutex<HashMap<MemoryType, Arc<Mutex<M>>>>,
-}
+// pub fn read(&self, what: MemoryType) -> Result<Arc<Mutex<File>>> {
+//     let mut map = self.readers.lock().unwrap();
 
-impl<M: Memory> RwPool<M> {
-    pub fn new(path: M::PathBase) -> Self {
-        Self {
-            path_base: path,
-            readers: Mutex::new(HashMap::new()),
-            writers: Mutex::new(HashMap::new()),
-        }
-    }
+//     if let Some(readers) = map.get_mut(&what) {
+//         let reader = readers.iter().find(|r| r.is_poisoned());
 
-    pub fn read(&self, what: MemoryType) -> Result<Arc<Mutex<M>>> {
-        let mut map = self.readers.lock().unwrap();
+//         match reader {
+//             Some(reader) => Ok(reader.clone()),
+//             None => {
+//                 if readers.len() < MAX_READERS {
+//                     let reader = Arc::new(Mutex::new(
+//                         M::get_for_read(what).context("failed to open new reader")?,
+//                     ));
+//                     readers.push(reader.clone());
+//                     Ok(reader)
+//                 } else {
+//                     Ok(readers
+//                         .last()
+//                         .expect("expected items after len check")
+//                         .clone())
+//                 }
+//             }
+//         }
+//     } else {
+//         let reader = Arc::new(Mutex::new(
+//             M::get_for_read(what).context("failed to create new reader")?,
+//         ));
 
-        if let Some(readers) = map.get_mut(&what) {
-            let reader = readers.iter().find(|r| r.is_poisoned());
+//         map.insert(what, vec![reader.clone()]);
 
-            match reader {
-                Some(reader) => Ok(reader.clone()),
-                None => {
-                    if readers.len() < MAX_READERS {
-                        let reader = Arc::new(Mutex::new(
-                            M::get_for_read(what).context("failed to open new reader")?,
-                        ));
-                        readers.push(reader.clone());
-                        Ok(reader)
-                    } else {
-                        Ok(readers
-                            .last()
-                            .expect("expected items after len check")
-                            .clone())
-                    }
-                }
-            }
-        } else {
-            let reader = Arc::new(Mutex::new(
-                M::get_for_read(what).context("failed to create new reader")?,
-            ));
+//         Ok(reader)
+//     }
+// }
 
-            map.insert(what, vec![reader.clone()]);
+// pub fn write(&self, what: MemoryType) -> Result<Arc<Mutex<M>>> {
+//     let mut map = self.writers.lock().unwrap();
 
-            Ok(reader)
-        }
-    }
+//     match map.get(&what) {
+//         Some(writer) => Ok(writer.clone()),
+//         None => {
+//             let writer = Arc::new(Mutex::new(
+//                 M::get_for_write(what).context("failed to open for write")?,
+//             ));
 
-    pub fn write(&self, what: MemoryType) -> Result<Arc<Mutex<M>>> {
-        let mut map = self.writers.lock().unwrap();
+//             map.insert(what, writer.clone());
 
-        match map.get(&what) {
-            Some(writer) => Ok(writer.clone()),
-            None => {
-                let writer = Arc::new(Mutex::new(
-                    M::get_for_write(what).context("failed to open for write")?,
-                ));
-
-                map.insert(what, writer.clone());
-
-                Ok(writer)
-            }
-        }
-    }
-}
+//             Ok(writer)
+//         }
+//     }
+// }
