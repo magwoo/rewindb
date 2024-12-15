@@ -1,0 +1,8 @@
+[package]
+name = "flemish-kv"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow.workspace = true
+murmur3 = "0.5.2"
