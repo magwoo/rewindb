@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["kv"]
+members = [ "bins/kv","libs/kv"]
 
 [workspace.dependencies]
 anyhow = "1.0.90"

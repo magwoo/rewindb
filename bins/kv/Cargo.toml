@@ -1,0 +1,7 @@
+[package]
+name = "kv-bin"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rewind-kv = { version = "0.1.0", path = "../../libs/kv" }
