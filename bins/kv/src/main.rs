@@ -1,19 +1,10 @@
-use flemish_kv::Database;
+use anyhow::Context;
+use rewind_kv::Database;
 
-fn main() {
-    let database = Database::open("./test.data").unwrap();
+fn main() -> anyhow::Result<()> {
+    let mut database = Database::new("./test.data".into()).context("failed to open database")?;
 
-    for i in 0..60000 {
-        database
-            .insert(
-                &format!("{:x}", i * 1234567_u128),
-                format!("{:x}", i * 7654321_u128).as_bytes(),
-            )
-            .unwrap();
-    }
+    database.set("test", "123").context("failed to set key")?;
 
-    println!(
-        "result: {:?}",
-        database.get(&format!("{:x}", 3 * 1234567_u128))
-    );
+    Ok(())
 }
