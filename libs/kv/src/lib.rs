@@ -14,6 +14,8 @@ impl Database {
         let file = File::options()
             .read(true)
             .write(true)
+            .create(true)
+            .truncate(true)
             .open(path)
             .context("failed to open file")?;
 
