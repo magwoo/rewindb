@@ -15,7 +15,7 @@ impl Database {
             .read(true)
             .write(true)
             .create(true)
-            .truncate(true)
+            .truncate(false)
             .open(path)
             .context("failed to open file")?;
 
