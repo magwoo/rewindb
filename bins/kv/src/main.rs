@@ -10,7 +10,7 @@ fn main() -> anyhow::Result<()> {
 
     let value = database.get("key1").context("failed to get value")?;
 
-    println!("value: {:?}", value);
+    println!("value: {value:?}");
 
     Ok(())
 }
